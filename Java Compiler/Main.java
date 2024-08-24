@@ -1,53 +1,3 @@
-/*import java.util.List;
-import java.util.Scanner;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter code to lex:");
-        String input = scanner.nextLine();
-
-        boolean endsWithDollar = input.endsWith("$");
-
-        if (endsWithDollar) {
-            input = input.substring(0, input.length() - 1);
-        }
-
-        String[] programs = input.split("\\$");
-        int programCount = 1;
-
-        for (String program : programs) {
-            if (!program.trim().isEmpty()) {
-                System.out.println("Program " + programCount + ":");
-                Lexer lexer = new Lexer(program);
-                List<Token> tokens = lexer.tokenize();
-
-                for (Token token : tokens) {
-                    System.out.println(token);
-                }
-                if (!lexer.getErrors().isEmpty()) {
-                    System.out.println("Errors:");
-                    for (String error : lexer.getErrors()) {
-                        System.out.println(error);
-                    }
-                }
-                else {
-                    Parser parser = new Parser(tokens);
-                    parser.parse();
-                }
-                programCount++;
-                System.out.println();
-            }
-        }
-
-        if (!endsWithDollar) {
-            System.out.println("Error: no $ at end of program");
-        }
-
-        scanner.close();
-    }
-}*/
-
 import java.util.List;
 import java.util.Scanner;
 
@@ -81,7 +31,7 @@ public class Main {
 
         if (tokens.isEmpty() || tokens.get(tokens.size() - 1).getType() != TokenType.EOF) {
             lexer.errors.add("Missing '$' at the end of the code.");
-            //System.out.println("Error: Missing '$' at the end of the code.");
+            // System.out.println("Error: Missing '$' at the end of the code.");
         }
 
         if (!lexer.errors.isEmpty()) {
@@ -89,18 +39,30 @@ public class Main {
             for (String error : lexer.errors) {
                 System.out.println(error);
             }
-        }
-        else {
+        } else {
             Parser parser = new Parser(tokens);
             parser.parse();
 
-            if (parser.error == null) {  // Only create CST if there are no parser errors
+            if (parser.error == null) { // Only create CST if there are no parser errors
                 CSTBuilder cstBuilder = new CSTBuilder(tokens);
-                ProgramNode program = cstBuilder.parseProgram();
-                program.print("");
-                
+                ProgramNode cstProgram = cstBuilder.parseProgram();
+                cstProgram.print("");
+
+                AST ast = new AST(tokens); // Pass tokens here
+                ProgramASTNode astProgram = ast.Program();
+                astProgram.print("");
+
+                if (!ast.getErrors().isEmpty()) {
+                    System.out.println("Errors/Warnings:");
+                    for (String error : ast.getErrors()) {
+                        System.out.println(error);
+                    }
+                }
+                else {
+                    ast.getSymbolTable().printSymbolTable();
+                }
             }
-        }     
+        }
 
         scanner.close();
     }

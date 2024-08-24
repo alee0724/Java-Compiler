@@ -102,8 +102,8 @@ public class Lexer {
                 continue;
             }
 
-            if (current == '=' || current == '!') {
-                if (pos + 1 < length) {
+            /*if (current == '=' || current == '!') {
+                //if (pos + 1 < length) {
                     char next = input.charAt(pos + 1);
                     if (current == '=' && next == '=') {
                         // Handle '==' as one token
@@ -119,7 +119,29 @@ public class Lexer {
                         pos++;
                         continue;
                     }
+                //}
+            }*/
+
+            if (current == '=' || current == '!') {
+                if (pos + 1 < length) {
+                    char next = input.charAt(pos + 1);
+                    if (current == '=' && next == '=') {
+                        // Handle '==' as one token
+                        tokens.add(new Token(TokenType.BOOLEAN_OP, "==", line));
+                        pos += 2; // Skip both '=' characters
+                        continue;
+                    }
+                    if (current == '!' && next == '=') {
+                        // Handle '!=' as one token
+                        tokens.add(new Token(TokenType.BOOLEAN_OP, "!=", line));
+                        pos += 2; // Skip both '!=' characters
+                        continue;
+                    }
                 }
+                // Handle single '=' as assignment
+                tokens.add(new Token(TokenType.ASSIGN, String.valueOf(current), line));
+                pos++;
+                continue;
             }
 
             TokenType operatorType = getOperatorType(current);
@@ -321,7 +343,7 @@ public class Lexer {
     }
 
     private TokenType getOperatorType(char current) {
-        if (pos + 1 < length) {
+        /*if (pos + 1 < length) {
             char next = input.charAt(pos + 1);
             if (input.charAt(pos) == '=' && next == '=') {
                 return TokenType.BOOLEAN_OP;
@@ -329,7 +351,7 @@ public class Lexer {
             if (input.charAt(pos) == '!' && next == '=') {
                 return TokenType.BOOLEAN_OP;
             }
-        }
+        }*/
         switch (current) {
             case '+':
                 return TokenType.INT_OP;

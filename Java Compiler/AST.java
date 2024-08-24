@@ -134,7 +134,10 @@ public class AST {
         ASTNode exprNode = Expression();
         assignStmtASTNode.addChild(exprNode);
         // System.out.println(exprNode);
-        SymbolTableEntry entry = symbolTable.getEntryAcrossScopes(idToken.getValue());
+        SymbolTableEntry entry = symbolTable.getEntry(idToken.getValue(), currentScope); // Check only current scope
+        if (entry == null) {
+            entry = symbolTable.getEntryAcrossScopes(idToken.getValue()); // Now check across scopes if not found
+        }
         if (entry != null) {
             // Variable exists in the current scope
             String varType = entry.getType(); // Type of the variable
@@ -170,8 +173,8 @@ public class AST {
         } else if (exprNode instanceof StringASTNode) {
             return "string";
         } else if (exprNode instanceof IdentifierASTNode) {
-            String variableName = exprNode.name.substring(4);  // Extract the name from "ID: <name>"
-            
+            String variableName = exprNode.name.substring(4); // Extract the name from "ID: <name>"
+
             SymbolTableEntry entry = symbolTable.getEntry(variableName, currentScope);
             if (entry != null) {
                 return entry.getType();
