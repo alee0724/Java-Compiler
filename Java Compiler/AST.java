@@ -1,14 +1,20 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class AST {
     private List<Token> tokens;
     private int position = 0;
     private List<String> errors = new ArrayList<>();
+    private List<String> warnings = new ArrayList<>();
     private SymbolTable symbolTable = new SymbolTable(); // Initialize the SymbolTable
     private int currentScope = 0;
+    private Set<String> declaredVariables = new HashSet<>();
+    private Set<String> usedVariables = new HashSet<>();
+    private Set<String> assignedVariables = new HashSet<>();
 
     public AST(List<Token> tokens) {
         this.tokens = tokens;
@@ -37,6 +43,8 @@ public class AST {
         ProgramASTNode programASTNode = new ProgramASTNode();
         programASTNode.addChild(Block());
         programASTNode.addChild(new EOFASTNode());
+        checkUnusedVariables();
+        checkUnassignedVariables();
         return programASTNode;
     }
 
@@ -66,19 +74,26 @@ public class AST {
 
         if (token.getType() == TokenType.INT) {
             return VariableDeclaration();
-        } else if (token.getType() == TokenType.STRING) {
+        } 
+        else if (token.getType() == TokenType.STRING) {
             return VariableDeclaration();
-        } else if (token.getType() == TokenType.BOOLEAN) {
+        } 
+        else if (token.getType() == TokenType.BOOLEAN) {
             return VariableDeclaration();
-        } else if (token.getType() == TokenType.ID) {
+        } 
+        else if (token.getType() == TokenType.ID) {
             return AssignmentStatement();
-        } else if (token.getType() == TokenType.IF) {
+        } 
+        else if (token.getType() == TokenType.IF) {
             return IfStatement();
-        } else if (token.getType() == TokenType.PRINT) {
+        } 
+        else if (token.getType() == TokenType.PRINT) {
             return PrintStatement();
-        } else if (token.getType() == TokenType.WHILE) {
+        } 
+        else if (token.getType() == TokenType.WHILE) {
             return WhileStatement();
-        } else if (token.getType() == TokenType.LEFT_BRACE) {
+        } 
+        else if (token.getType() == TokenType.LEFT_BRACE) {
             return Block();
         }
         /*
@@ -92,33 +107,38 @@ public class AST {
     private VariableDeclarationASTNode VariableDeclaration() {
         VariableDeclarationASTNode varDeclASTNode = new VariableDeclarationASTNode();
         Token token = currentToken();
-        if (token != null && (token.getType() == TokenType.INT || token.getType() == TokenType.STRING
-                || token.getType() == TokenType.BOOLEAN)) {
+        if (token != null && (token.getType() == TokenType.INT || token.getType() == TokenType.STRING || token.getType() == TokenType.BOOLEAN)) {
             String type = token.getValue(); // Variable type (int, string, boolean)
             varDeclASTNode.addChild(new VariableTypeASTNode(type));
             nextToken(); // Consume the type token
+
             Token idToken = nextToken(); // Get the identifier token
             // System.out.println(idToken.getValue());
             String name = idToken.getValue(); // Variable name
             varDeclASTNode.addChild(new IdentifierASTNode(name));
+            declaredVariables.add(name);
 
-            SymbolTableEntry existingEntry = symbolTable.getEntryAcrossScopes(name);
+            SymbolTableEntry existingEntry = /*symbolTable.getEntryAcrossScopes(name);*/ symbolTable.getEntry(name, currentScope);
             if (existingEntry != null) {
+                errors.add("Variable '" + name + "' already declared in the current scope at line " + existingEntry.getLine());
                 if (existingEntry.getScope() < currentScope) {
                     symbolTable.addEntry(name, type, currentScope, idToken.getLine());
-                } else {
+                } 
+                else {
                     // Variable is redeclared in the same or lower scope, which is an error
                     if (!existingEntry.getType().equals(type)) {
                         errors.add("Variable '" + name + "' is already declared as '" + existingEntry.getType() +
-                                "' in the same or lower scope but attempted to declare as '" + type + "'.");
+                                "' in the same scope but attempted to declare as '" + type + "'.");
                     }
                 }
-            } else {
+            } 
+            else {
                 // Add entry to symbol table
                 symbolTable.addEntry(name, type, currentScope, idToken.getLine());
             }
-        } else {
-            error("Expected variable type but got '" + (token != null ? token.getValue() : "EOF") + "'");
+        } 
+        else {
+            errors.add("Expected variable type but got '" + (token != null ? token.getValue() : "EOF") + "'");
         }
 
         return varDeclASTNode;
@@ -139,16 +159,19 @@ public class AST {
             entry = symbolTable.getEntryAcrossScopes(idToken.getValue()); // Now check across scopes if not found
         }
         if (entry != null) {
+            usedVariables.add(idToken.getValue());
+            assignedVariables.add(idToken.getValue());
             // Variable exists in the current scope
             String varType = entry.getType(); // Type of the variable
             // Determine the type of the expression
             String exprType = determineExpressionType(exprNode);
             // Check if the types match
             if (!varType.equals(exprType)) {
-                errors.add("Type mismatch: Variable '" + idToken.getValue() + "' declared as '" + varType +
+                errors.add("Variable '" + idToken.getValue() + "' declared as '" + varType +
                         "' but assigned a value of type '" + exprType + "'.");
             }
-        } else {
+        } 
+        else {
             errors.add("Variable '" + idToken.getValue() + "' not declared.");
         }
 
@@ -157,23 +180,24 @@ public class AST {
     }
 
     private String determineExpressionType(ASTNode exprNode) {
-        // Implement logic to determine the type of the expression based on your
-        // language's rules
-        // For example, check if the expression is an integer, boolean, string, etc.
-        // This might involve traversing the exprNode if it's complex
-
+        // Implement logic to determine the type of the expression based on user input
         if (exprNode instanceof IntegerExpressionASTNode) {
             return "int";
-        } else if (exprNode instanceof BooleanValueASTNode) {
+        }
+        else if (exprNode instanceof BooleanValueASTNode) {
             return "boolean";
-        } else if (exprNode instanceof BooleanExpressionASTNode) {
+        }
+        else if (exprNode instanceof BooleanExpressionASTNode) {
             return "boolean";
-        } else if (exprNode instanceof StringExpressionASTNode) {
+        } 
+        else if (exprNode instanceof StringExpressionASTNode) {
             return "string";
-        } else if (exprNode instanceof StringASTNode) {
+        } 
+        else if (exprNode instanceof StringASTNode) {
             return "string";
-        } else if (exprNode instanceof IdentifierASTNode) {
-            String variableName = exprNode.name.substring(4); // Extract the name from "ID: <name>"
+        } 
+        else if (exprNode instanceof IdentifierASTNode) {
+            String variableName = exprNode.name.substring(4); // Extract the name from id
 
             SymbolTableEntry entry = symbolTable.getEntry(variableName, currentScope);
             if (entry != null) {
@@ -183,7 +207,23 @@ public class AST {
                 return "unknown";
             }
         }
-        return "unknown"; // Default return value if the type cannot be determined
+        return "unknown"; // Default return value
+    }
+
+    private void checkUnusedVariables() {
+        for (String variable : declaredVariables) {
+            if (!usedVariables.contains(variable)) {
+                warnings.add("Variable '" + variable + "' declared but never used.");
+            }
+        }
+    }
+
+    private void checkUnassignedVariables() {
+        for (String variable : declaredVariables) {
+            if (!assignedVariables.contains(variable)) {
+                warnings.add("Variable '" + variable + "' declared but never assigned.");
+            }
+        }
     }
 
     private IfStatementASTNode IfStatement() {
@@ -218,16 +258,21 @@ public class AST {
         if (token.getType() == TokenType.ID) {
             expectToken(TokenType.ID);
             return new IdentifierASTNode(token.getValue());
-        } else if (token.getType() == TokenType.DIGIT) {
+        } 
+        else if (token.getType() == TokenType.DIGIT) {
             return IntegerExpression();
-        } else if (token.getType() == TokenType.LEFT_PARENTHESIS) {
+        } 
+        else if (token.getType() == TokenType.LEFT_PARENTHESIS) {
             return BooleanExpression();
-        } else if (token.getType() == TokenType.CHAR) {
+        } 
+        else if (token.getType() == TokenType.CHAR) {
             return StringExpression();
-        } else if (token.getType() == TokenType.BOOLEAN_VAL) {
+        } 
+        else if (token.getType() == TokenType.BOOLEAN_VAL) {
             expectToken(TokenType.BOOLEAN_VAL);
             return new BooleanValueASTNode(token.getValue());
-        } else {
+        } 
+        else {
             // error("Unexpected token: " + token.getType());
             // return exprNode; // Return the expression node, possibly empty, on error
         }
@@ -270,12 +315,6 @@ public class AST {
                 integerExpressionASTNode.addChild(Expression()); // Recursively parse the next integer expression
             }
         }
-        /*
-         * else {
-         * error("Expected integer expression but got '" + token.getValue() + "'");
-         * }
-         */
-
         return integerExpressionASTNode;
     }
 
@@ -291,11 +330,6 @@ public class AST {
             stringExpressionASTNode.addChild(new StringASTNode(token.getValue()));
             expectToken(TokenType.CHAR);
         }
-        /*
-         * else {
-         * error("Expected string expression");
-         * }
-         */
         return stringExpressionASTNode;
     }
 
@@ -309,11 +343,15 @@ public class AST {
         return errors;
     }
 
+    public List<String> getWarnings() {
+        return warnings;
+    }
+
     public SymbolTable getSymbolTable() {
         return symbolTable;
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your code:");
         StringBuilder input = new StringBuilder();
@@ -339,14 +377,24 @@ public class AST {
         program.print("");
 
         if (!ast.getErrors().isEmpty()) {
-            System.out.println("Errors/Warnings:");
+            System.out.println("Errors:");
             for (String error : ast.getErrors()) {
                 System.out.println(error);
             }
         }
 
-        ast.getSymbolTable().printSymbolTable();
+        else if (!ast.getWarnings().isEmpty()) {
+            System.out.println("Warnings:");
+            for (String warning : ast.getWarnings()) {
+                System.out.println(warning);
+            }
+            ast.getSymbolTable().printSymbolTable();
+        }
+
+        else {
+            ast.getSymbolTable().printSymbolTable();
+        }
 
         scanner.close();
-    }
+    }*/
 }
