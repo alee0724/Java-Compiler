@@ -7,7 +7,6 @@ public class Parser {
     private List<Token> tokens;
     private int pos;
     private int length;
-    //List<String> errors;
     String error;
 
     public Parser(List<Token> tokens) {
@@ -25,18 +24,6 @@ public class Parser {
         if (error == null && !isAtEnd()) {
             consume(TokenType.EOF, "Expected '$' to end");
         }
-        /*if (!hasErrors() && !isAtEnd()) {
-            consume(TokenType.EOF, "Expected '$' to end");
-        }
-
-        if (!errors.isEmpty()) {
-            System.out.println("Errors:");
-            for (String error : errors) {
-                System.out.println(error);
-            }
-        } else {
-            System.out.println("Parsing finished.");
-        }*/
         if (error != null) {
             System.out.println("Error:");
             System.out.println(error);
@@ -46,8 +33,6 @@ public class Parser {
     }
 
     private void parseProgram() {
-        /*if (hasErrors())
-            return;*/
         System.out.println("parseProgram()");
         parseBlock();
     }
@@ -68,7 +53,7 @@ public class Parser {
                 parseStatementList();
             } 
             else {
-                error("Cannot start statement with current token");
+                error("Cannot start statement with");
                 break;
             }
         }
@@ -78,26 +63,28 @@ public class Parser {
         System.out.println("parseStatement()");
         if (check(TokenType.INT)) {
             parseVarDecl();
-        } else if (check(TokenType.STRING)) {
+        } 
+        else if (check(TokenType.STRING)) {
             parseVarDecl();
-        } else if (check(TokenType.BOOLEAN)) {
+        } 
+        else if (check(TokenType.BOOLEAN)) {
             parseVarDecl();
-        } else if (match(TokenType.ID)) {
+        } 
+        else if (match(TokenType.ID)) {
             parseAssignmentStatement();
-        } else if (match(TokenType.PRINT)) {
+        } 
+        else if (match(TokenType.PRINT)) {
             parsePrintStatement();
-        } else if (match(TokenType.IF)) {
+        } 
+        else if (match(TokenType.IF)) {
             parseIfStatement();
-        } else if (match(TokenType.WHILE)) {
+        } 
+        else if (match(TokenType.WHILE)) {
             parseWhileStatement();
-        } else if (check(TokenType.LEFT_BRACE)) {
+        } 
+        else if (check(TokenType.LEFT_BRACE)) {
             parseBlock();
         }
-        /*
-         * else if (check(TokenType.RIGHT_BRACE)) {
-         * return;
-         * }
-         */
         else {
             error("Expected a statement");
         }
@@ -149,7 +136,8 @@ public class Parser {
         System.out.println("parseBooleanExpr()");
         if (match(TokenType.BOOLEAN_VAL)) {
             return;
-        } else if (match(TokenType.LEFT_PARENTHESIS)) {
+        } 
+        else if (match(TokenType.LEFT_PARENTHESIS)) {
             parseExpr();
             parseBoolOp();
             parseExpr();
@@ -230,7 +218,6 @@ public class Parser {
     }
 
     private void error(String message) {
-        //errors.add(message + " at token " + (pos < length ? tokens.get(pos) : "EOF"));
         if (error == null) {
             error = message + " at " + (pos < length ? tokens.get(pos) : "EOF");
         }
@@ -257,7 +244,7 @@ public class Parser {
         return pos >= length || tokens.get(pos).getType() == TokenType.EOF;
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your code:");
         // String input = scanner.nextLine();
@@ -280,5 +267,5 @@ public class Parser {
         parser.parse();
 
         scanner.close();
-    }
+    }*/
 }

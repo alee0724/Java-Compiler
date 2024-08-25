@@ -344,7 +344,6 @@ public class CSTBuilder {
         BooleanExpressionNode boolExprNode = new BooleanExpressionNode();
         if (token.getType() == TokenType.BOOLEAN_VAL) {
             boolExprNode.addChild(new BooleanValueNode(nextToken().getValue()));
-            //return boolExprNode;
         }
         else if (token.getType() == TokenType.LEFT_PARENTHESIS) {
             expectToken(TokenType.LEFT_PARENTHESIS);
@@ -355,7 +354,6 @@ public class CSTBuilder {
             boolExprNode.addChild(parseExpression());
             expectToken(TokenType.RIGHT_PARENTHESIS);
             boolExprNode.addChild(new RightParenthesisNode());
-            //return boolExprNode;
         }
         return boolExprNode;
     }
@@ -365,13 +363,13 @@ public class CSTBuilder {
         IntegerExpressionNode integerExpressionNode = new IntegerExpressionNode();
     
         if (token.getType() == TokenType.DIGIT) {
-            integerExpressionNode.addChild(new IntegerLiteralNode(token.getValue())); // Add the digit as a literal node
-            nextToken(); // Move to the next token
-            token = currentToken(); // Get the updated current token
+            integerExpressionNode.addChild(new IntegerLiteralNode(token.getValue())); // Add digit as literal
+            nextToken(); // Move to next token
+            token = currentToken(); // Get updated token
             if (token != null && token.getType() == TokenType.INT_OP) {
-                integerExpressionNode.addChild(parseIntOp()); // Add the operator node
+                integerExpressionNode.addChild(parseIntOp()); 
                 expectToken(TokenType.INT_OP);
-                integerExpressionNode.addChild(parseExpression()); // Recursively parse the next integer expression
+                integerExpressionNode.addChild(parseExpression()); // Recursively parse next int expr
             }
         } 
         else {
@@ -409,7 +407,7 @@ public class CSTBuilder {
         return errors;
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your code:");
         StringBuilder input = new StringBuilder();
@@ -442,5 +440,5 @@ public class CSTBuilder {
         }
 
         scanner.close();
-    }
+    }*/
 }

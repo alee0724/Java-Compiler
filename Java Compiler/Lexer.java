@@ -9,6 +9,7 @@ public class Lexer {
     private int pos;
     private int length;
     List<String> errors;
+    List<String> warnings;
     private int line = 1;
 
     public Lexer(String input) {
@@ -16,6 +17,7 @@ public class Lexer {
         this.length = input.length();
         this.pos = 0;
         this.errors = new ArrayList<>();
+        this.warnings = new ArrayList<>();
     }
 
     public List<Token> tokenize() {
@@ -32,9 +34,8 @@ public class Lexer {
                 continue;
             }
 
-            // Handle single-line comments
+            // single-line comments
             if (current == '/' && pos + 1 < length && input.charAt(pos + 1) == '/') {
-                // Skip the single-line comment
                 pos += 2;
                 while (pos < length && input.charAt(pos) != '\n') {
                     pos++;
@@ -42,13 +43,12 @@ public class Lexer {
                 continue;
             }
 
-            // Handle multi-line comments
+            // multi-line comments
             if (current == '/' && pos + 1 < length && input.charAt(pos + 1) == '*') {
-                // Skip the multi-line comment
                 pos += 2;
                 while (pos < length) {
                     if (input.charAt(pos) == '*' && pos + 1 < length && input.charAt(pos + 1) == '/') {
-                        pos += 2; // Skip the closing */
+                        pos += 2;
                         break;
                     }
                     if (input.charAt(pos) == '\n') {
@@ -58,29 +58,6 @@ public class Lexer {
                 }
                 continue;
             }
-
-            /*if (Character.isLetter(current)) {
-                String identifier = readIdentifier();
-                int keywordLength = getKeywordLength(identifier);
-                List<Token> idTokens = processIdentifier(identifier);
-
-                if (keywordLength > 0) {
-                    String keyword = identifier.substring(0, keywordLength);
-                    tokens.add(new Token(getKeywordOrIdentifierType(keyword), keyword));
-                    identifier = identifier.substring(keywordLength);
-
-                    if (!identifier.isEmpty()) {
-                        tokens.addAll(processIdentifier(identifier));
-                    }
-                    tokens.addAll(processIdentifier(identifier));
-                } else {
-                    tokens.addAll(idTokens);
-                    for (char c : identifier.toCharArray()) {
-                        tokens.add(new Token(TokenType.ID, String.valueOf(c)));
-                    }
-                }
-                continue;
-            }*/
             
             if (Character.isLetter(current)) {
                 String identifier = readIdentifier();
@@ -89,8 +66,6 @@ public class Lexer {
             }
 
             if (Character.isDigit(current)) {
-                //String number = readNumber();
-                //tokens.add(new Token(TokenType.DIGIT, number, line));
                 tokens.add(new Token(TokenType.DIGIT, String.valueOf(current), line));
                 pos++;
                 continue;
@@ -102,43 +77,22 @@ public class Lexer {
                 continue;
             }
 
-            /*if (current == '=' || current == '!') {
-                //if (pos + 1 < length) {
-                    char next = input.charAt(pos + 1);
-                    if (current == '=' && next == '=') {
-                        // Handle '==' as one token
-                        tokens.add(new Token(TokenType.BOOLEAN_OP, "==", line));
-                        pos++; // Skip the next '=' character
-                        pos++;
-                        continue;
-                    }
-                    if (current == '!' && next == '=') {
-                        // Handle '!=' as one token
-                        tokens.add(new Token(TokenType.BOOLEAN_OP, "!=", line));
-                        pos++; // Skip the next '=' character
-                        pos++;
-                        continue;
-                    }
-                //}
-            }*/
-
             if (current == '=' || current == '!') {
                 if (pos + 1 < length) {
                     char next = input.charAt(pos + 1);
                     if (current == '=' && next == '=') {
-                        // Handle '==' as one token
+                        // Handle '=='
                         tokens.add(new Token(TokenType.BOOLEAN_OP, "==", line));
-                        pos += 2; // Skip both '=' characters
+                        pos += 2;
                         continue;
                     }
                     if (current == '!' && next == '=') {
-                        // Handle '!=' as one token
+                        // Handle '!='
                         tokens.add(new Token(TokenType.BOOLEAN_OP, "!=", line));
-                        pos += 2; // Skip both '!=' characters
+                        pos += 2;
                         continue;
                     }
                 }
-                // Handle single '=' as assignment
                 tokens.add(new Token(TokenType.ASSIGN, String.valueOf(current), line));
                 pos++;
                 continue;
@@ -154,16 +108,20 @@ public class Lexer {
             if (current != '$') {
                 tokens.add(new Token(TokenType.UNKNOWN, String.valueOf(current), line));
                 errors.add("Unknown token '" + current + "' at line " + line);
-                break; // Exit the loop
+                break;
             } 
             else {
-                // Handle end of program
                 tokens.add(new Token(TokenType.EOF, "$", line));
                 pos++;
             }
 
             tokens.add(new Token(TokenType.UNKNOWN, String.valueOf(current), line));
             pos++;
+        }
+
+        if (tokens.isEmpty() || tokens.get(tokens.size() - 1).getType() != TokenType.EOF) {
+            warnings.add("Warning: Missing '$' at the end of the code. Automatically adding '$'.");
+            tokens.add(new Token(TokenType.EOF, "$", line));
         }
 
         return tokens;
@@ -186,12 +144,6 @@ public class Lexer {
             }
 
             if (!matchedKeyword) {
-                /*int end = start + 1;
-                while (end < identifier.length() && !isKeywordStart(identifier.substring(start, end))) {
-                    end++;
-                }*/
-                //tokens.add(new Token(TokenType.ID, identifier.substring(start, end), line));
-                //start = end;
                 tokens.add(new Token(TokenType.ID, String.valueOf(identifier.charAt(start)), line));
                 start++;
             }
@@ -199,27 +151,15 @@ public class Lexer {
 
         return tokens;
     }
-    
-    /*private int getKeywordLength(String remaining) {
-        for (TokenType type : TokenType.values()) {
-            if (type != TokenType.ID && type != TokenType.UNKNOWN) {
-                String keyword = type.name().toLowerCase();
-                if (remaining.startsWith(keyword)) {
-                    return keyword.length();
-                }
-            }
-        }
-        return 0;
-    }*/
 
-    private boolean isKeywordStart(String part) {
+    /*private boolean isKeywordStart(String part) {
         for (String keyword : getKeywords()) {
             if (keyword.startsWith(part)) {
                 return true;
             }
         }
         return false;
-    }
+    }*/
 
     private List<String> getKeywords() {
         List<String> keywords = new ArrayList<>();
@@ -249,13 +189,13 @@ public class Lexer {
         return input.substring(start, pos);
     }
 
-    private String readNumber() {
+    /*private String readNumber() {
         int start = pos;
         while (pos < length && Character.isDigit(input.charAt(pos))) {
             pos++;
         }
         return input.substring(start, pos);
-    }
+    }*/
 
     private String readString() {
         pos++; // Skip the opening quote
@@ -268,31 +208,29 @@ public class Lexer {
     
             if (current == '\n') {
                 errors.add("Line break found in a string at line " + line + ", position " + start);
-                break; // Exit the loop as line breaks are not allowed in strings
+                break; 
             }
 
-            // Check for digits
+            // digits
             if (Character.isDigit(current)) {
                 hasNumber = true;
             }
     
-            // Check for single-line comments
+            // single-line comments
             if (current == '/' && pos + 1 < length && input.charAt(pos + 1) == '/') {
-                // Skip the single-line comment
                 pos += 2;
                 while (pos < length && input.charAt(pos) != '\n') {
                     pos++;
                 }
-                continue; // Go back to the start of the loop
+                continue; 
             }
     
-            // Check for multi-line comments
+            // multi-line comments
             if (current == '/' && pos + 1 < length && input.charAt(pos + 1) == '*') {
-                // Skip the multi-line comment
                 pos += 2;
                 while (pos < length) {
                     if (input.charAt(pos) == '*' && pos + 1 < length && input.charAt(pos + 1) == '/') {
-                        pos += 2; // Skip the closing */
+                        pos += 2;
                         break;
                     }
                     if (input.charAt(pos) == '\n') {
@@ -300,7 +238,7 @@ public class Lexer {
                     }
                     pos++;
                 }
-                continue; // Go back to the start of the loop
+                continue;
             }
     
             result.append(current);
@@ -311,7 +249,7 @@ public class Lexer {
             errors.add("Numbers are not allowed in a string at line " + line + ", position " + start);
         }
     
-        pos++; // Skip the closing quote
+        pos++; 
         return result.toString();
     }    
 
@@ -343,15 +281,6 @@ public class Lexer {
     }
 
     private TokenType getOperatorType(char current) {
-        /*if (pos + 1 < length) {
-            char next = input.charAt(pos + 1);
-            if (input.charAt(pos) == '=' && next == '=') {
-                return TokenType.BOOLEAN_OP;
-            }
-            if (input.charAt(pos) == '!' && next == '=') {
-                return TokenType.BOOLEAN_OP;
-            }
-        }*/
         switch (current) {
             case '+':
                 return TokenType.INT_OP;
@@ -376,7 +305,11 @@ public class Lexer {
         return errors;
     }
 
-    public static void main(String[] args) {
+    public List<String> getWarnings() {
+        return warnings;
+    }
+
+    /*public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter code to lex:");
         // String input = scanner.nextLine();
@@ -415,5 +348,5 @@ public class Lexer {
         }
 
         scanner.close();
-    }
+    }*/
 }
